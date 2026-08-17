@@ -1,10 +1,14 @@
 <!-- frontend/src/components/QuestForm.vue -->
 <script setup>
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
-  lat: { type: Number, required: true },
-  lng: { type: Number, required: true },
+  // Coordinates for a brand new quest (the dropped pin). Optional when editing,
+  // because an existing quest already carries its own lat/lng.
+  lat: { type: Number, default: null },
+  lng: { type: Number, default: null },
+  // When present the form acts as an edit form, pre-filled from this quest.
+  quest: { type: Object, default: null },
 })
 const emit = defineEmits(['submit', 'cancel'])
 
@@ -13,6 +17,33 @@ const description = ref('')
 const category = ref('food')
 const startsAt = ref('')
 
+const isEdit = computed(() => !!props.quest)
+const submitLabel = computed(() => (isEdit.value ? 'Save quest' : 'Create quest'))
+const latValue = computed(() => (props.quest ? props.quest.lat : props.lat))
+const lngValue = computed(() => (props.quest ? props.quest.lng : props.lng))
+
+/**
+ * The API returns `starts_at` as an ISO-8601 string ("2026-09-01T18:00:00+00:00")
+ * while `<input type="datetime-local">` needs "YYYY-MM-DDTHH:mm". Slicing (rather
+ * than going through `Date`) keeps the wall-clock value the user originally typed,
+ * matching how the create flow submits it.
+ */
+function toDateTimeLocal(value) {
+  if (!value) return ''
+  return String(value).replace(' ', 'T').slice(0, 16)
+}
+
+watch(
+  () => props.quest,
+  (quest) => {
+    title.value = quest?.title ?? ''
+    description.value = quest?.description ?? ''
+    category.value = quest?.category ?? 'food'
+    startsAt.value = toDateTimeLocal(quest?.starts_at)
+  },
+  { immediate: true },
+)
+
 function submit() {
   if (!title.value.trim()) return
 
@@ -20,8 +51,8 @@ function submit() {
     title: title.value,
     description: description.value,
     category: category.value,
-    lat: props.lat,
-    lng: props.lng,
+    lat: latValue.value,
+    lng: lngValue.value,
     starts_at: startsAt.value,
   })
 }
@@ -40,8 +71,8 @@ function submit() {
       <option value="other">Other</option>
     </select>
     <input data-test="starts_at" v-model="startsAt" type="datetime-local" required />
-    <button type="submit">Create quest</button>
-    <button type="button" @click="emit('cancel')">Cancel</button>
+    <button data-test="submit" type="submit">{{ submitLabel }}</button>
+    <button data-test="cancel" type="button" @click="emit('cancel')">Cancel</button>
   </form>
 </template>
 
@@ -56,7 +87,8 @@ function submit() {
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 1rem;
-  background: white;
+  border-top: 2px solid var(--sfm-panel-border);
+  background: var(--sfm-panel-bg);
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
 }
 </style>

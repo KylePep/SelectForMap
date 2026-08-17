@@ -41,4 +41,30 @@ describe('auth store', () => {
     expect(store.token).toBeNull()
     expect(store.isAuthenticated).toBe(false)
   })
+
+  it('clears the local session even when the logout request fails', async () => {
+    apiClient.post.mockRejectedValue(new Error('Network Error'))
+
+    const store = useAuthStore()
+    store._setSession({ id: 1, name: 'Ada', email: 'ada@example.com' }, 'abc123')
+
+    await expect(store.logout()).resolves.toBeUndefined()
+
+    expect(apiClient.post).toHaveBeenCalledWith('/logout')
+    expect(store.user).toBeNull()
+    expect(store.token).toBeNull()
+    expect(localStorage.getItem('sfm_token')).toBeNull()
+  })
+
+  it('clearSession drops the session without calling the API', () => {
+    const store = useAuthStore()
+    store._setSession({ id: 1, name: 'Ada', email: 'ada@example.com' }, 'abc123')
+
+    store.clearSession()
+
+    expect(store.token).toBeNull()
+    expect(store.isAuthenticated).toBe(false)
+    expect(localStorage.getItem('sfm_user')).toBeNull()
+    expect(apiClient.post).not.toHaveBeenCalled()
+  })
 })

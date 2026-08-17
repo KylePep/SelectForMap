@@ -1,35 +1,115 @@
 @import './base.css';
 
+/* SFM is a full-bleed map app: the root must not be a centered, padded, two-column
+   document shell (the Vue starter default), or the 100vh map is squeezed into a
+   column and the fixed HUD elements are pushed off-screen. */
+html,
+body,
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#app {
   font-weight: normal;
 }
 
-a,
-.green {
+a {
+  color: var(--sfm-accent);
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+a:hover {
+  text-decoration: underline;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+/* ---------------------------------------------------------------------------
+   Game-HUD chrome layered over the map. Everything here is fixed-position and
+   sits above the map canvas (z-index 0), in the same spirit as the QuestForm /
+   QuestPanel bottom panels.
+   --------------------------------------------------------------------------- */
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* Top-centered stack of status banners. Stacking them in one flow container means
+   they can never overlap each other, whichever combination is showing. */
+.sfm-hud-top {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: min(90vw, 34rem);
+  pointer-events: none;
+}
+
+.sfm-location-banner,
+.sfm-api-error,
+.sfm-empty-state {
+  margin: 0;
+  padding: 0.625rem 1rem;
+  border: 2px solid var(--sfm-panel-border);
+  border-radius: 10px;
+  background: var(--sfm-panel-bg);
+  color: var(--sfm-panel-text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.sfm-api-error {
+  border-color: var(--sfm-danger);
+  color: var(--sfm-danger);
+}
+
+.sfm-empty-state {
+  color: var(--sfm-muted-text);
+}
+
+/* Top-right corner: clear of the banner stack and of the bottom quest panels. */
+.sfm-explore-button {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 20;
+  padding: 0.625rem 1.5rem;
+  border: 2px solid var(--sfm-panel-border);
+  border-radius: 999px;
+  background: var(--sfm-accent);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.sfm-explore-button:hover {
+  filter: brightness(1.08);
+}
+
+.sfm-map-error {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  background: var(--sfm-panel-bg);
+  color: var(--sfm-panel-text);
+  text-align: center;
+}
+
+/* The map-error panel covers the whole viewport, so any geolocation message is
+   repeated inside it rather than being hidden underneath. */
+.sfm-map-error__note {
+  color: var(--sfm-muted-text);
+  font-size: 0.9em;
 }

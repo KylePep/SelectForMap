@@ -18,6 +18,14 @@ function render() {
   el.style.height = '32px'
   el.style.backgroundImage = 'url(/sprites/avatar-default.png)'
   el.style.backgroundSize = 'contain'
+  el.style.backgroundRepeat = 'no-repeat'
+  el.style.backgroundPosition = 'center'
+  // Visible fallback for when the avatar sprite has not been added yet, so the
+  // player's position is never an invisible/transparent div.
+  el.style.backgroundColor = '#1098ad'
+  el.style.borderRadius = '50%'
+  el.style.border = '3px solid #ffffff'
+  el.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.35)'
 
   marker = new mapboxgl.Marker({ element: el })
     .setLngLat([props.lng, props.lat])
