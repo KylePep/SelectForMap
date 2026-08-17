@@ -1,5 +1,11 @@
 <script setup>
+import MapCanvas from '../components/MapCanvas.vue'
+
+function onMapReady(map) {
+  console.log('Map ready', map)
+}
 </script>
+
 <template>
-  <div>Map goes here.</div>
+  <MapCanvas @map-ready="onMapReady" />
 </template>
