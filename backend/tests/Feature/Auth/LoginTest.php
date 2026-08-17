@@ -30,3 +30,18 @@ test('login fails with incorrect password', function () {
 
     $response->assertStatus(422)->assertJsonValidationErrors('email');
 });
+
+test('login is rate limited after repeated attempts', function () {
+    User::factory()->create([
+        'email' => 'ada@example.com',
+        'password' => Hash::make('password123'),
+    ]);
+
+    $credentials = ['email' => 'ada@example.com', 'password' => 'wrong-password'];
+
+    for ($attempt = 0; $attempt < 6; $attempt++) {
+        $this->postJson('/api/login', $credentials)->assertStatus(422);
+    }
+
+    $this->postJson('/api/login', $credentials)->assertStatus(429);
+});
