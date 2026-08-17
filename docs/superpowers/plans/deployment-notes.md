@@ -22,7 +22,14 @@
   build output is baked into the `web` image itself at build time.
 - `web` reverse-proxies `/api` to the `app` (PHP-FPM) container and serves everything else from the
   built static SPA (`try_files ... /index.html`), matching the spec's single-origin production
-  architecture.
+  architecture. The `location ~ \.php$` block that hands requests to PHP-FPM is a **top-level
+  sibling** of `location /api`, not nested inside it: `location /api`'s `try_files` does an internal
+  redirect to `/index.php?$query_string`, and nginx re-matches internal redirects against top-level
+  locations only, so a nested PHP location would never be reached and requests would silently fall
+  through to the SPA's `index.html` instead of reaching Laravel. This mirrors the already-working
+  pattern in `docker/nginx/dev.conf`. Confirmed by local verification: `curl /api/health` returned
+  the built `index.html` (wrong) until the PHP location was un-nested, after which it returned
+  `{"status":"ok"}` as expected.
 - The `db` service in `docker-compose.prod.yml` does not publish a host port (unlike the dev
   compose file's `3307:3306`), since production DB access should go through the app container only.
 - Because `docker-compose.yml` (dev) and `docker-compose.prod.yml` live in the same directory and
