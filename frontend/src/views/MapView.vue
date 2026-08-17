@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import MapCanvas from '../components/MapCanvas.vue'
 import AvatarMarker from '../components/AvatarMarker.vue'
+import QuestMarker from '../components/QuestMarker.vue'
 import { useGeolocation } from '../composables/useGeolocation'
 import { useQuestsStore } from '../stores/quests'
 import { boundsChangedSignificantly } from '../utils/bounds'
@@ -10,6 +11,7 @@ const map = ref(null)
 const { position, error, requestLocation } = useGeolocation()
 const questsStore = useQuestsStore()
 const showExploreButton = ref(false)
+const selectedQuest = ref(null)
 
 function currentMapBounds() {
   const b = map.value.getBounds()
@@ -38,6 +40,13 @@ async function exploreThisArea() {
 <template>
   <MapCanvas @map-ready="onMapReady" />
   <AvatarMarker v-if="map && position" :map="map" :lat="position.lat" :lng="position.lng" />
+  <QuestMarker
+    v-for="quest in questsStore.quests"
+    :key="quest.id"
+    :map="map"
+    :quest="quest"
+    @select="(q) => (selectedQuest = q)"
+  />
   <p v-if="error" class="sfm-location-banner">{{ error }} Showing a default location instead.</p>
   <button v-if="showExploreButton" class="sfm-explore-button" @click="exploreThisArea">
     Explore this area
