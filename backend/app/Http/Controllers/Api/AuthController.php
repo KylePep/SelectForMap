@@ -32,4 +32,34 @@ class AuthController extends Controller
             'token' => $token,
         ], 201);
     }
+
+    public function login(Request $request): JsonResponse
+    {
+        $validated = Validator::make($request->all(), [
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string'],
+        ])->validate();
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if (! $user || ! Hash::check($validated['password'], $user->password)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => ['These credentials do not match our records.'],
+            ]);
+        }
+
+        $token = $user->createToken('sfm')->plainTextToken;
+
+        return response()->json([
+            'user' => $user->only('id', 'name', 'email'),
+            'token' => $token,
+        ]);
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $request->user()->tokens()->delete();
+
+        return response()->json(null, 204);
+    }
 }
