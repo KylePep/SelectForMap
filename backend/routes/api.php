@@ -19,4 +19,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/quests', [QuestController::class, 'index']);
     Route::post('/quests', [QuestController::class, 'store']);
+    Route::put('/quests/{quest}', [QuestController::class, 'update']);
+    Route::delete('/quests/{quest}', [QuestController::class, 'destroy']);
 });
