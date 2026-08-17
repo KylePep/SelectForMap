@@ -30,4 +30,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function quests()
+    {
+        return $this->hasMany(\App\Models\Quest::class);
+    }
 }
