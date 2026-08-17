@@ -12,5 +12,10 @@ export const useQuestsStore = defineStore('quests', {
       this.quests = data
       this.lastLoadedBounds = bounds
     },
+    async createQuest(payload) {
+      const { data } = await apiClient.post('/quests', payload)
+      this.quests.push(data)
+      return data
+    },
   },
 })

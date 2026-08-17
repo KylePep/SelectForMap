@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import MapCanvas from '../components/MapCanvas.vue'
 import AvatarMarker from '../components/AvatarMarker.vue'
 import QuestMarker from '../components/QuestMarker.vue'
+import QuestForm from '../components/QuestForm.vue'
 import { useGeolocation } from '../composables/useGeolocation'
 import { useQuestsStore } from '../stores/quests'
 import { boundsChangedSignificantly } from '../utils/bounds'
@@ -12,6 +13,7 @@ const { position, error, requestLocation } = useGeolocation()
 const questsStore = useQuestsStore()
 const showExploreButton = ref(false)
 const selectedQuest = ref(null)
+const pendingPin = ref(null) // { lat, lng } while the creation form is open
 
 function currentMapBounds() {
   const b = map.value.getBounds()
@@ -35,10 +37,19 @@ async function exploreThisArea() {
   await questsStore.fetchQuestsInBounds(currentMapBounds())
   showExploreButton.value = false
 }
+
+function onMapClick({ lat, lng }) {
+  pendingPin.value = { lat, lng }
+}
+
+async function submitQuest(payload) {
+  await questsStore.createQuest(payload)
+  pendingPin.value = null
+}
 </script>
 
 <template>
-  <MapCanvas @map-ready="onMapReady" />
+  <MapCanvas @map-ready="onMapReady" @map-click="onMapClick" />
   <AvatarMarker v-if="map && position" :map="map" :lat="position.lat" :lng="position.lng" />
   <QuestMarker
     v-for="quest in questsStore.quests"
@@ -51,4 +62,11 @@ async function exploreThisArea() {
   <button v-if="showExploreButton" class="sfm-explore-button" @click="exploreThisArea">
     Explore this area
   </button>
+  <QuestForm
+    v-if="pendingPin"
+    :lat="pendingPin.lat"
+    :lng="pendingPin.lng"
+    @submit="submitQuest"
+    @cancel="pendingPin = null"
+  />
 </template>
