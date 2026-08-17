@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useQuestsStore } from '../quests'
 import { apiClient } from '../../lib/apiClient'
 
-vi.mock('../../lib/apiClient', () => ({ apiClient: { get: vi.fn(), post: vi.fn() } }))
+vi.mock('../../lib/apiClient', () => ({ apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }))
 
 describe('quests store', () => {
   beforeEach(() => {
@@ -35,5 +35,27 @@ describe('quests store', () => {
     })
     expect(store.quests).toHaveLength(2)
     expect(store.quests[1]).toEqual({ id: 5, title: 'Movie night' })
+  })
+
+  it('updates a quest in place', async () => {
+    apiClient.put = vi.fn().mockResolvedValue({ data: { id: 1, title: 'Updated' } })
+
+    const store = useQuestsStore()
+    store.quests = [{ id: 1, title: 'Original' }]
+    await store.updateQuest(1, { title: 'Updated' })
+
+    expect(apiClient.put).toHaveBeenCalledWith('/quests/1', { title: 'Updated' })
+    expect(store.quests[0].title).toBe('Updated')
+  })
+
+  it('removes a quest after deleting', async () => {
+    apiClient.delete = vi.fn().mockResolvedValue({})
+
+    const store = useQuestsStore()
+    store.quests = [{ id: 1, title: 'Gone soon' }]
+    await store.deleteQuest(1)
+
+    expect(apiClient.delete).toHaveBeenCalledWith('/quests/1')
+    expect(store.quests).toHaveLength(0)
   })
 })

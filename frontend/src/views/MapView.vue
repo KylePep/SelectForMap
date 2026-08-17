@@ -4,6 +4,7 @@ import MapCanvas from '../components/MapCanvas.vue'
 import AvatarMarker from '../components/AvatarMarker.vue'
 import QuestMarker from '../components/QuestMarker.vue'
 import QuestForm from '../components/QuestForm.vue'
+import QuestPanel from '../components/QuestPanel.vue'
 import { useGeolocation } from '../composables/useGeolocation'
 import { useQuestsStore } from '../stores/quests'
 import { boundsChangedSignificantly } from '../utils/bounds'
@@ -46,6 +47,11 @@ async function submitQuest(payload) {
   await questsStore.createQuest(payload)
   pendingPin.value = null
 }
+
+async function deleteSelectedQuest(id) {
+  await questsStore.deleteQuest(id)
+  selectedQuest.value = null
+}
 </script>
 
 <template>
@@ -68,5 +74,11 @@ async function submitQuest(payload) {
     :lng="pendingPin.lng"
     @submit="submitQuest"
     @cancel="pendingPin = null"
+  />
+  <QuestPanel
+    v-if="selectedQuest"
+    :quest="selectedQuest"
+    @close="selectedQuest = null"
+    @delete="deleteSelectedQuest"
   />
 </template>
