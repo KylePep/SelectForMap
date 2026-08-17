@@ -17,5 +17,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
+    Route::get('/quests', [QuestController::class, 'index']);
     Route::post('/quests', [QuestController::class, 'store']);
 });
