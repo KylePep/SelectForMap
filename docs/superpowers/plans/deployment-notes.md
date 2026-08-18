@@ -7,8 +7,8 @@
    a real `APP_KEY` (`php artisan key:generate --show` locally, paste the value), production
    DB credentials matching `docker-compose.prod.yml`, and `FRONTEND_URL` to the public domain/IP.
 4. Set `frontend/.env` `VITE_API_BASE_URL=/api` (relative, since nginx now serves both under one origin)
-   and `VITE_MAPBOX_TOKEN` to the production Mapbox token, before building the image (Vite bakes
-   env vars in at build time).
+   before building the image (Vite bakes env vars in at build time). No map API key is needed — the
+   map uses MapLibre GL JS against OpenFreeMap's free hosted tiles, which require no account or token.
 5. Run `docker compose -f docker-compose.prod.yml up -d --build`.
 6. Run `docker compose -f docker-compose.prod.yml exec app php artisan migrate --force`.
 7. Visit the instance's public IP/domain and confirm the map loads and login works.

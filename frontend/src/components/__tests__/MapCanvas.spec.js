@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import MapCanvas from '../MapCanvas.vue'
-import mapboxgl from 'mapbox-gl'
+import maplibregl from 'maplibre-gl'
 
-// A minimal fake of the bits of mapbox-gl this component touches, so the
-// load/error wiring can be exercised without a real token or network.
-vi.mock('mapbox-gl', () => {
+// A minimal fake of the bits of maplibre-gl this component touches, so the
+// load/error wiring can be exercised without a real network.
+vi.mock('maplibre-gl', () => {
   const state = { constructorThrows: null, instances: [] }
 
   class Map {
@@ -26,10 +26,10 @@ vi.mock('mapbox-gl', () => {
     }
   }
 
-  return { default: { Map, accessToken: null, __state: state } }
+  return { default: { Map, __state: state } }
 })
 
-const state = mapboxgl.__state
+const state = maplibregl.__state
 
 describe('MapCanvas', () => {
   beforeEach(() => {
@@ -54,8 +54,8 @@ describe('MapCanvas', () => {
     expect(wrapper.emitted('map-click')[0][0]).toEqual({ lat: 40.7128, lng: -74.006 })
   })
 
-  it('emits map-error when the map constructor throws (e.g. a bad token)', () => {
-    state.constructorThrows = new Error('An API access token is required to use Mapbox GL JS.')
+  it('emits map-error when the map constructor throws (e.g. an unsupported browser)', () => {
+    state.constructorThrows = new Error('Failed to initialize WebGL.')
 
     const wrapper = mount(MapCanvas)
 
@@ -65,7 +65,7 @@ describe('MapCanvas', () => {
     )
   })
 
-  it('emits map-error when mapbox reports a runtime error', () => {
+  it('emits map-error when the map reports a runtime error', () => {
     const wrapper = mount(MapCanvas)
 
     state.instances[0].emit('error', { error: { message: 'Unauthorized' } })
@@ -74,7 +74,7 @@ describe('MapCanvas', () => {
     expect(wrapper.emitted('map-error')[0][0].detail).toBe('Unauthorized')
   })
 
-  it('reports repeated mapbox errors only once', () => {
+  it('reports repeated map errors only once', () => {
     const wrapper = mount(MapCanvas)
 
     state.instances[0].emit('error', { error: { message: 'tile 1 failed' } })

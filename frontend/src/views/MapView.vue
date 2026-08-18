@@ -10,9 +10,9 @@ import { useQuestsStore } from '../stores/quests'
 import { boundsChangedSignificantly } from '../utils/bounds'
 import { apiErrorMessage } from '../lib/apiClient'
 
-// shallowRef, not ref: a mapbox-gl Map holds a large internal object graph that
+// shallowRef, not ref: a maplibre-gl Map holds a large internal object graph that
 // must not be wrapped in a deep reactive Proxy (breaks identity/WeakMap lookups
-// inside Mapbox and costs a lot of needless reactivity work).
+// inside MapLibre and costs a lot of needless reactivity work).
 const map = shallowRef(null)
 const { position, error, requestLocation } = useGeolocation()
 const questsStore = useQuestsStore()
@@ -46,7 +46,7 @@ async function loadQuests() {
   }
 }
 
-// Geolocation is requested independently of Mapbox so that a map failure can never
+// Geolocation is requested independently of the map so that a map failure can never
 // suppress the "location denied" fallback (and vice versa).
 onMounted(async () => {
   await requestLocation()

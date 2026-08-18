@@ -1,7 +1,7 @@
 <!-- frontend/src/components/QuestMarker.vue -->
 <script setup>
 import { onMounted, onBeforeUnmount, watch } from 'vue'
-import mapboxgl from 'mapbox-gl'
+import maplibregl from 'maplibre-gl'
 import { iconForCategory, colorForCategory } from '../utils/categoryIcons'
 
 const props = defineProps({
@@ -35,14 +35,14 @@ onMounted(() => {
   el.style.cursor = 'pointer'
   applyCategoryStyles(el, props.quest.category)
 
-  // Mapbox markers do not stop propagation, so without this the same click would
-  // also reach the map's own click handler and open the "new quest" form on top.
+  // Marker clicks do not stop propagation by default, so without this the same
+  // click would also reach the map's own click handler and open the "new quest" form on top.
   el.addEventListener('click', (event) => {
     event.stopPropagation()
     emit('select', props.quest)
   })
 
-  marker = new mapboxgl.Marker({ element: el })
+  marker = new maplibregl.Marker({ element: el })
     .setLngLat([props.quest.lng, props.quest.lat])
     .addTo(props.map)
 })

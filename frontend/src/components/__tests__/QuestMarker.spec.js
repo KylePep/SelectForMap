@@ -5,7 +5,7 @@ import { colorForCategory, iconForCategory } from '../../utils/categoryIcons'
 
 const markers = []
 
-vi.mock('mapbox-gl', () => {
+vi.mock('maplibre-gl', () => {
   class Marker {
     constructor({ element }) {
       this.element = element

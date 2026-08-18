@@ -1,7 +1,7 @@
 <!-- frontend/src/components/AvatarMarker.vue -->
 <script setup>
 import { onMounted, onBeforeUnmount, watch } from 'vue'
-import mapboxgl from 'mapbox-gl'
+import maplibregl from 'maplibre-gl'
 
 const props = defineProps({
   map: { type: Object, required: true },
@@ -27,7 +27,7 @@ function render() {
   el.style.border = '3px solid #ffffff'
   el.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.35)'
 
-  marker = new mapboxgl.Marker({ element: el })
+  marker = new maplibregl.Marker({ element: el })
     .setLngLat([props.lng, props.lat])
     .addTo(props.map)
 }

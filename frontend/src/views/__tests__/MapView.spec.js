@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
-import mapboxgl from 'mapbox-gl'
+import maplibregl from 'maplibre-gl'
 import MapView from '../MapView.vue'
 import QuestMarker from '../../components/QuestMarker.vue'
 import QuestForm from '../../components/QuestForm.vue'
 import { apiClient } from '../../lib/apiClient'
 
-vi.mock('mapbox-gl', () => {
+vi.mock('maplibre-gl', () => {
   const state = { instances: [], markers: [] }
 
   class Map {
@@ -44,7 +44,7 @@ vi.mock('mapbox-gl', () => {
     }
   }
 
-  return { default: { Map, Marker, accessToken: null, __state: state } }
+  return { default: { Map, Marker, __state: state } }
 })
 
 vi.mock('../../lib/apiClient', async (importOriginal) => {
@@ -55,7 +55,7 @@ vi.mock('../../lib/apiClient', async (importOriginal) => {
   }
 })
 
-const state = mapboxgl.__state
+const state = maplibregl.__state
 
 const quest = {
   id: 1,
@@ -67,7 +67,7 @@ const quest = {
   starts_at: '2026-09-01T18:00:00+00:00',
 }
 
-/** Mounts the view and drives it through the Mapbox `load` event. */
+/** Mounts the view and drives it through the map's `load` event. */
 async function mountLoadedMap(quests = [quest]) {
   apiClient.get.mockResolvedValue({ data: quests })
   const wrapper = mount(MapView)

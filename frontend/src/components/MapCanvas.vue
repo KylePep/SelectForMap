@@ -1,8 +1,8 @@
 <!-- frontend/src/components/MapCanvas.vue -->
 <script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 
 const emit = defineEmits(['map-ready', 'map-click', 'map-error'])
 const mapContainer = ref(null)
@@ -11,8 +11,12 @@ let reportedError = false
 
 const LOAD_FAILURE_MESSAGE = 'Unable to load the map. Please check your connection or try again later.'
 
-// Mapbox emits a stream of `error` events (one per failed tile request, for example);
-// the view only ever needs to be told once.
+// OpenFreeMap's hosted style — free, no API key/account required. "positron" is a
+// light, muted basemap matching the spec's light-pastel-base/bold-marker direction.
+const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/positron'
+
+// The map library emits a stream of `error` events (one per failed tile request,
+// for example); the view only ever needs to be told once.
 function reportError(detail) {
   if (reportedError) return
   reportedError = true
@@ -20,24 +24,22 @@ function reportError(detail) {
 }
 
 onMounted(() => {
-  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN
-
   try {
-    map = new mapboxgl.Map({
+    map = new maplibregl.Map({
       container: mapContainer.value,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: MAP_STYLE_URL,
       center: [-98.5795, 39.8283],
       zoom: 3,
     })
   } catch (error) {
-    // Thrown synchronously for e.g. a missing access token or an unsupported browser.
+    // Thrown synchronously for e.g. an unsupported browser.
     reportError(error?.message ?? String(error))
     return
   }
 
   map.on('load', () => emit('map-ready', map))
   map.on('click', (e) => emit('map-click', { lat: e.lngLat.lat, lng: e.lngLat.lng }))
-  map.on('error', (e) => reportError(e?.error?.message ?? 'Mapbox reported an error.'))
+  map.on('error', (e) => reportError(e?.error?.message ?? 'The map reported an error.'))
 })
 
 onBeforeUnmount(() => {
