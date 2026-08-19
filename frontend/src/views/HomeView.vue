@@ -2,55 +2,51 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { apiErrorMessage } from '../lib/apiClient'
+import LoginForm from '../components/LoginForm.vue'
+import RegisterForm from '../components/RegisterForm.vue'
 
-const email = ref('')
-const password = ref('')
-const passwordConfirmation = ref('')
-const error = ref('')
+const loginError = ref('')
+const registerError = ref('')
 const auth = useAuthStore()
 const router = useRouter()
 
-async function submitLogin() {
-  error.value = ''
+async function submitLogin(payload) {
+  loginError.value = ''
   try {
-    await auth.login({ email: email.value, password: password.value })
+    await auth.login(payload)
     router.push('/map')
   } catch (e) {
-    error.value = e.response?.data?.errors?.email?.[0] || 'Login failed.'
+    loginError.value = apiErrorMessage(e, 'Login failed.')
   }
 }
-async function submitRegister() {
-  error.value = ''
+
+async function submitRegister(payload) {
+  registerError.value = ''
   try {
-    await auth.register({
-      name: name.value,
-      email: email.value,
-      password: password.value,
-      password_confirmation: passwordConfirmation.value,
-    })
+    await auth.register(payload)
     router.push('/map')
   } catch (e) {
-    error.value = e.response?.data?.errors?.email?.[0] || 'Registration failed.'
+    registerError.value = apiErrorMessage(e, 'Registration failed.')
   }
 }
 </script>
 
-<style lang="scss" scoped></style>
-
 <template>
-  <form @submit.prevent="submit">
-    <input v-model="email" type="email" placeholder="Email" required />
-    <input v-model="password" type="password" placeholder="Password" required />
-    <button type="submit">Log in</button>
-    <p v-if="error">{{ error }}</p>
-  </form>
-
-  <form @submit.prevent="submit">
-    <input v-model="name" placeholder="Name" required />
-    <input v-model="email" type="email" placeholder="Email" required />
-    <input v-model="password" type="password" placeholder="Password" required />
-    <input v-model="passwordConfirmation" type="password" placeholder="Confirm password" required />
-    <button type="submit">Sign up</button>
-    <p v-if="error">{{ error }}</p>
-  </form>
+  <div class="sfm-home">
+    <LoginForm :error="loginError" @submit="submitLogin" />
+    <RegisterForm :error="registerError" @submit="submitRegister" />
+  </div>
 </template>
+
+<style scoped>
+.sfm-home {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1.5rem;
+  min-height: 100%;
+  padding: 3rem 1.5rem;
+}
+</style>

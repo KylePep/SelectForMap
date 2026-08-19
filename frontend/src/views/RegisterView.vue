@@ -2,38 +2,34 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { apiErrorMessage } from '../lib/apiClient'
+import RegisterForm from '../components/RegisterForm.vue'
 
-const name = ref('')
-const email = ref('')
-const password = ref('')
-const passwordConfirmation = ref('')
 const error = ref('')
 const auth = useAuthStore()
 const router = useRouter()
 
-async function submit() {
+async function submit(payload) {
   error.value = ''
   try {
-    await auth.register({
-      name: name.value,
-      email: email.value,
-      password: password.value,
-      password_confirmation: passwordConfirmation.value,
-    })
+    await auth.register(payload)
     router.push('/map')
   } catch (e) {
-    error.value = e.response?.data?.errors?.email?.[0] || 'Registration failed.'
+    error.value = apiErrorMessage(e, 'Registration failed.')
   }
 }
 </script>
 
 <template>
-  <form @submit.prevent="submit">
-    <input v-model="name" placeholder="Name" required />
-    <input v-model="email" type="email" placeholder="Email" required />
-    <input v-model="password" type="password" placeholder="Password" required />
-    <input v-model="passwordConfirmation" type="password" placeholder="Confirm password" required />
-    <button type="submit">Sign up</button>
-    <p v-if="error">{{ error }}</p>
-  </form>
+  <div class="sfm-auth-view">
+    <RegisterForm :error="error" @submit="submit" />
+  </div>
 </template>
+
+<style scoped>
+.sfm-auth-view {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+</style>
