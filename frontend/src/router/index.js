@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
+import HomeView from "../views/HomeView.vue"
 import MapView from '../views/MapView.vue'
 import { useAuthStore } from '../stores/auth'
 
@@ -9,6 +10,7 @@ const router = createRouter({
   routes: [
     { path: '/login', component: LoginView },
     { path: '/register', component: RegisterView },
+    { path: '/home', component: HomeView },
     { path: '/map', component: MapView, meta: { requiresAuth: true } },
     { path: '/', redirect: '/map' },
   ],
