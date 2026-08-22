@@ -34,26 +34,28 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <div
-    v-if="modelValue"
-    class="sfm-offcanvas-backdrop"
-    data-test="offcanvas-backdrop"
-    @click.self="close"
-  >
-    <div class="sfm-offcanvas-panel">
-      <button
-        type="button"
-        class="sfm-offcanvas-panel__close"
-        data-test="offcanvas-close"
-        aria-label="Close"
-        @click="close"
-      >
-        &times;
-      </button>
-      <h2 v-if="title" class="sfm-offcanvas-panel__title">{{ title }}</h2>
-      <slot />
+  <Transition name="sfm-offcanvas">
+    <div
+      v-if="modelValue"
+      class="sfm-offcanvas-backdrop"
+      data-test="offcanvas-backdrop"
+      @click.self="close"
+    >
+      <div class="sfm-offcanvas-panel">
+        <button
+          type="button"
+          class="sfm-offcanvas-panel__close"
+          data-test="offcanvas-close"
+          aria-label="Close"
+          @click="close"
+        >
+          &times;
+        </button>
+        <h2 v-if="title" class="sfm-offcanvas-panel__title">{{ title }}</h2>
+        <slot />
+      </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -62,6 +64,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   inset: 0;
   z-index: 50;
   background: rgba(0, 0, 0, 0.5);
+  transition: opacity 0.2s ease-out;
 }
 
 .sfm-offcanvas-panel {
@@ -74,16 +77,19 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   color: var(--sfm-panel-text);
   border-right: 2px solid var(--sfm-panel-border);
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.25);
-  animation: sfm-offcanvas-slide-in 0.2s ease-out;
+  transition: transform 0.2s ease-out;
 }
 
-@keyframes sfm-offcanvas-slide-in {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+/* The backdrop fades and the panel slides together, in both directions,
+   so closing mirrors opening instead of the panel vanishing instantly. */
+.sfm-offcanvas-enter-from,
+.sfm-offcanvas-leave-to {
+  opacity: 0;
+}
+
+.sfm-offcanvas-enter-from .sfm-offcanvas-panel,
+.sfm-offcanvas-leave-to .sfm-offcanvas-panel {
+  transform: translateX(-100%);
 }
 
 .sfm-offcanvas-panel__title {
