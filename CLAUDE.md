@@ -13,7 +13,7 @@ Full design spec: `docs/superpowers/specs/2026-08-10-select-for-map-core-design.
 Two independent projects, no shared root `package.json`/build:
 
 - `backend/` — Laravel 13 API-only app (no Blade/Inertia views), PHP 8.3+
-- `frontend/` — Vue 3 (Composition API) + Vite SPA, talks to the API over HTTP
+- `frontend/` — Vue 3 (Composition API) + Vite SPA, talks to the API over HTTP. `frontend/capacitor.config.json` (appId `com.kylepeppersack.selectformap`, `webDir: dist`) prepares this same Vite build for a future Capacitor-wrapped mobile app — `@capacitor/core`/`@capacitor/cli` are installed but no native `ios/`/`android/` platform folders exist yet (`npx cap add ios|android` when ready)
 - `docker/` — nginx and PHP Dockerfiles/configs for both dev and prod compose stacks
 - `docs/superpowers/` — specs, plans, and `plans/deployment-notes.md` (EC2/Docker deploy steps and nginx gotchas — read before touching nginx configs or the prod compose file)
 
