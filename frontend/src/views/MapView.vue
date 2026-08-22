@@ -5,6 +5,7 @@ import AvatarMarker from '../components/AvatarMarker.vue'
 import QuestMarker from '../components/QuestMarker.vue'
 import QuestForm from '../components/QuestForm.vue'
 import QuestPanel from '../components/QuestPanel.vue'
+import OffCanvas from '../components/OffCanvas.vue'
 import { useGeolocation } from '../composables/useGeolocation'
 import { useQuestsStore } from '../stores/quests'
 import { boundsChangedSignificantly } from '../utils/bounds'
@@ -17,6 +18,7 @@ const map = shallowRef(null)
 const { position, error, requestLocation } = useGeolocation()
 const questsStore = useQuestsStore()
 const showExploreButton = ref(false)
+const showOffCanvas = ref(false)
 const selectedQuest = ref(null)
 const pendingPin = ref(null) // { lat, lng } while the creation form is open
 const mapError = ref(null)
@@ -123,29 +125,22 @@ async function deleteSelectedQuest(id) {
 </script>
 
 <template>
+  <div class="sfm-canvas-button h-10 w-10 rounded-full bg-blue-500" @click="showOffCanvas = true"></div>
   <!-- The canvas stays mounted even on an error so a recoverable failure can clear
        itself; the fallback panel simply covers it. -->
   <MapCanvas @map-ready="onMapReady" @map-click="onMapClick" @map-error="onMapError" />
 
   <template v-if="map">
     <AvatarMarker v-if="position" :map="map" :lat="position.lat" :lng="position.lng" />
-    <QuestMarker
-      v-for="quest in questsStore.quests"
-      :key="quest.id"
-      :map="map"
-      :quest="quest"
-      @select="onQuestSelected"
-    />
+    <QuestMarker v-for="quest in questsStore.quests" :key="quest.id" :map="map" :quest="quest"
+      @select="onQuestSelected" />
   </template>
 
   <div class="sfm-hud-top">
     <p v-if="error" class="sfm-location-banner">{{ error }} Showing a default location instead.</p>
     <p v-if="apiError" class="sfm-api-error" data-test="api-error">{{ apiError }}</p>
-    <p
-      v-if="questsLoaded && !apiError && questsStore.quests.length === 0"
-      class="sfm-empty-state"
-      data-test="empty-state"
-    >
+    <p v-if="questsLoaded && !apiError && questsStore.quests.length === 0" class="sfm-empty-state"
+      data-test="empty-state">
       No quests here yet — drop a pin to add one.
     </p>
   </div>
@@ -153,20 +148,10 @@ async function deleteSelectedQuest(id) {
   <button v-if="showExploreButton" class="sfm-explore-button" @click="exploreThisArea">
     Explore this area
   </button>
-  <QuestForm
-    v-if="pendingPin"
-    :lat="pendingPin.lat"
-    :lng="pendingPin.lng"
-    @submit="submitQuest"
-    @cancel="pendingPin = null"
-  />
-  <QuestPanel
-    v-if="selectedQuest"
-    :quest="selectedQuest"
-    @close="selectedQuest = null"
-    @delete="deleteSelectedQuest"
-    @save="saveQuest"
-  />
+  <QuestForm v-if="pendingPin" :lat="pendingPin.lat" :lng="pendingPin.lng" @submit="submitQuest"
+    @cancel="pendingPin = null" />
+  <QuestPanel v-if="selectedQuest" :quest="selectedQuest" @close="selectedQuest = null" @delete="deleteSelectedQuest"
+    @save="saveQuest" />
 
   <div v-if="mapError" class="sfm-map-error" data-test="map-error">
     <h2>Map unavailable</h2>
@@ -175,4 +160,8 @@ async function deleteSelectedQuest(id) {
       {{ error }}
     </p>
   </div>
+
+  <OffCanvas v-model="showOffCanvas" title="Menu">
+    <p>This is dummy off-canvas content.</p>
+  </OffCanvas>
 </template>

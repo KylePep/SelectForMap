@@ -1,3 +1,4 @@
+@import 'tailwindcss';
 @import './base.css';
 
 /* SFM is a full-bleed map app: the root must not be a centered, padded, two-column
@@ -46,6 +47,16 @@ a:hover {
   width: max-content;
   max-width: min(90vw, 34rem);
   pointer-events: none;
+}
+
+.sfm-canvas-button {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 20;
+  display: block;
+  gap: 0.5rem;
+  cursor: pointer;
 }
 
 .sfm-location-banner,
