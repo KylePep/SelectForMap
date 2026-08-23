@@ -4,6 +4,8 @@ import { setActivePinia, createPinia } from 'pinia'
 import maplibregl from 'maplibre-gl'
 import QuestMap from '../QuestMap.vue'
 import QuestMarker from '../QuestMarker.vue'
+import AvatarMarker from '../AvatarMarker.vue'
+import HomeMarker from '../HomeMarker.vue'
 import { apiClient } from '../../lib/apiClient'
 
 vi.mock('maplibre-gl', () => {
@@ -14,6 +16,7 @@ vi.mock('maplibre-gl', () => {
       this.options = options
       this.handlers = {}
       this.flyTo = vi.fn()
+      this.getZoom = () => 10
       this.remove = vi.fn()
       this.getBounds = () => ({
         getSouth: () => 40,
@@ -67,8 +70,10 @@ const quest = {
 }
 
 /** Mounts the component and drives it through the map's `load` event. */
-async function mountLoadedMap(quests = [quest]) {
-  apiClient.get.mockResolvedValue({ data: quests })
+async function mountLoadedMap(quests = [quest], profile = { home_lat: null, home_lng: null }) {
+  apiClient.get.mockImplementation((url) =>
+    Promise.resolve({ data: url === '/profile' ? profile : quests }),
+  )
   const wrapper = mount(QuestMap)
   await flushPromises()
   state.instances[0].emit('load')
@@ -98,7 +103,7 @@ describe('QuestMap', () => {
     const wrapper = mount(QuestMap)
 
     const lastStatus = wrapper.emitted('status').at(-1)[0]
-    expect(lastStatus).toEqual({ locationError: null, loadError: null, questsLoaded: false })
+    expect(lastStatus).toEqual({ locationError: null, loadError: null, questsLoaded: false, position: null })
   })
 
   it('reports quest-loading status to the parent, including the empty-quests case', async () => {
@@ -110,6 +115,7 @@ describe('QuestMap', () => {
       locationError: 'Geolocation is unavailable in this browser.',
       loadError: null,
       questsLoaded: true,
+      position: { lat: 39.8283, lng: -98.5795 },
     })
   })
 
@@ -174,5 +180,57 @@ describe('QuestMap', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-test="map-error"]').exists()).toBe(false)
+  })
+
+  it('loads the profile once the map is ready', async () => {
+    await mountLoadedMap()
+
+    expect(apiClient.get).toHaveBeenCalledWith('/profile')
+  })
+
+  it('renders a home marker and Home button once a home base is loaded', async () => {
+    const wrapper = await mountLoadedMap([quest], { home_lat: 51.5, home_lng: -0.12 })
+
+    expect(wrapper.findComponent(HomeMarker).exists()).toBe(true)
+    expect(wrapper.find('[data-test="home-button"]').exists()).toBe(true)
+  })
+
+  it('does not render a Home button when no home base is set', async () => {
+    const wrapper = await mountLoadedMap()
+
+    expect(wrapper.findComponent(HomeMarker).exists()).toBe(false)
+    expect(wrapper.find('[data-test="home-button"]').exists()).toBe(false)
+  })
+
+  it('flies to the home base when the Home button is clicked', async () => {
+    const wrapper = await mountLoadedMap([quest], { home_lat: 51.5, home_lng: -0.12 })
+    state.instances[0].flyTo.mockClear()
+
+    await wrapper.find('[data-test="home-button"]').trigger('click')
+
+    expect(state.instances[0].flyTo).toHaveBeenCalledWith({ center: [-0.12, 51.5], zoom: 12 })
+  })
+
+  it('centers on the home base instead of the default location when geolocation fails and a home base is set', async () => {
+    await mountLoadedMap([quest], { home_lat: 51.5, home_lng: -0.12 })
+
+    // jsdom has no navigator.geolocation, so this exercises the failure fallback.
+    expect(state.instances[0].flyTo).toHaveBeenCalledWith({ center: [-0.12, 51.5], zoom: 12 })
+  })
+
+  it('lets the avatar marker request setting home base only when none is set', async () => {
+    const wrapper = await mountLoadedMap()
+
+    expect(wrapper.findComponent(AvatarMarker).props('clickable')).toBe(true)
+
+    wrapper.findComponent(AvatarMarker).vm.$emit('home-requested')
+
+    expect(wrapper.emitted('home-requested')).toHaveLength(1)
+  })
+
+  it('does not let the avatar marker request home once a home base is set', async () => {
+    const wrapper = await mountLoadedMap([quest], { home_lat: 51.5, home_lng: -0.12 })
+
+    expect(wrapper.findComponent(AvatarMarker).props('clickable')).toBe(false)
   })
 })

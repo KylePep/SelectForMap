@@ -30,7 +30,7 @@ describe('HomeView', () => {
     await wrapper.get('button').trigger('click')
     expect(wrapper.findComponent(LoginForm).exists()).toBe(true)
 
-    await wrapper.getComponent(LoginForm).find('[data-test="modal-close"]').trigger('click')
+    await wrapper.find('[data-test="modal-close"]').trigger('click')
     expect(wrapper.findComponent(LoginForm).exists()).toBe(false)
 
     await wrapper.findAll('button')[1].trigger('click')

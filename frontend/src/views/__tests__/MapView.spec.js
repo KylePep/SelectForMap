@@ -3,8 +3,10 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import maplibregl from 'maplibre-gl'
 import MapView from '../MapView.vue'
+import QuestMap from '../../components/QuestMap.vue'
 import QuestMarker from '../../components/QuestMarker.vue'
 import QuestForm from '../../components/QuestForm.vue'
+import AvatarMarker from '../../components/AvatarMarker.vue'
 import { apiClient } from '../../lib/apiClient'
 
 // MapView composes QuestMap (the real map surface) with the CRUD panels, so these
@@ -19,6 +21,7 @@ vi.mock('maplibre-gl', () => {
       this.options = options
       this.handlers = {}
       this.flyTo = vi.fn()
+      this.getZoom = () => 10
       this.remove = vi.fn()
       this.getBounds = () => ({
         getSouth: () => 40,
@@ -55,7 +58,7 @@ vi.mock('../../lib/apiClient', async (importOriginal) => {
   const actual = await importOriginal()
   return {
     ...actual,
-    apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
+    apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn() },
   }
 })
 
@@ -190,5 +193,95 @@ describe('MapView', () => {
     // result of the user's last action) takes priority over the stale load error.
     expect(wrapper.findAll('[data-test="api-error"]')).toHaveLength(1)
     expect(wrapper.find('[data-test="api-error"]').text()).toBe('Could not create that quest.')
+  })
+
+  it('opens a confirmation modal when the avatar marker requests setting home base', async () => {
+    const wrapper = await mountLoadedMap()
+
+    wrapper.findComponent(AvatarMarker).vm.$emit('home-requested')
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="modal-backdrop"]').exists()).toBe(true)
+  })
+
+  it('sets the home base when the confirmation is accepted', async () => {
+    const wrapper = await mountLoadedMap()
+    apiClient.patch.mockResolvedValue({ data: { home_lat: 39.8283, home_lng: -98.5795 } })
+
+    wrapper.findComponent(AvatarMarker).vm.$emit('home-requested')
+    await flushPromises()
+    await wrapper.find('[data-test="confirm-home-yes"]').trigger('click')
+    await flushPromises()
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/profile', { home_lat: 39.8283, home_lng: -98.5795 })
+    expect(wrapper.find('[data-test="modal-backdrop"]').exists()).toBe(false)
+  })
+
+  it('shows an inline error and keeps the confirmation open when setting home base fails', async () => {
+    const wrapper = await mountLoadedMap()
+    apiClient.patch.mockRejectedValue(new Error('Network Error'))
+
+    wrapper.findComponent(AvatarMarker).vm.$emit('home-requested')
+    await flushPromises()
+    await wrapper.find('[data-test="confirm-home-yes"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="api-error"]').text()).toContain('Could not reach the server')
+    expect(wrapper.find('[data-test="modal-backdrop"]').exists()).toBe(true)
+  })
+
+  it('closes the confirmation modal without setting home base on No', async () => {
+    const wrapper = await mountLoadedMap()
+
+    wrapper.findComponent(AvatarMarker).vm.$emit('home-requested')
+    await flushPromises()
+    await wrapper.find('[data-test="confirm-home-no"]').trigger('click')
+    await flushPromises()
+
+    expect(apiClient.patch).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-test="modal-backdrop"]').exists()).toBe(false)
+  })
+
+  it('sets home base from the Home Base off-canvas menu', async () => {
+    const wrapper = await mountLoadedMap()
+    apiClient.patch.mockResolvedValue({ data: { home_lat: 39.8283, home_lng: -98.5795 } })
+
+    await wrapper.find('.sfm-canvas-button').trigger('click')
+    await wrapper.find('[data-test="home-base-menu-button"]').trigger('click')
+    await wrapper.find('[data-test="set-home-from-menu"]').trigger('click')
+    await flushPromises()
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/profile', { home_lat: 39.8283, home_lng: -98.5795 })
+  })
+
+  it('shows an inline error when setting home base from the menu fails', async () => {
+    const wrapper = await mountLoadedMap()
+    apiClient.patch.mockRejectedValue(new Error('Network Error'))
+
+    await wrapper.find('.sfm-canvas-button').trigger('click')
+    await wrapper.find('[data-test="home-base-menu-button"]').trigger('click')
+    await wrapper.find('[data-test="set-home-from-menu"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="api-error"]').text()).toContain('Could not reach the server')
+  })
+
+  it('disables the off-canvas "set home base" button until a position is available', async () => {
+    const wrapper = await mountLoadedMap()
+    // jsdom resolves useGeolocation's fallback within the same microtask flush as any
+    // `trigger()`, so a real "position not yet available" state can't be raced via
+    // timing — simulate it directly via the same status event QuestMap emits.
+    wrapper.findComponent(QuestMap).vm.$emit('status', {
+      locationError: null,
+      loadError: null,
+      questsLoaded: true,
+      position: null,
+    })
+    await flushPromises()
+
+    await wrapper.find('.sfm-canvas-button').trigger('click')
+    await wrapper.find('[data-test="home-base-menu-button"]').trigger('click')
+
+    expect(wrapper.find('[data-test="set-home-from-menu"]').attributes('disabled')).toBeDefined()
   })
 })
