@@ -5,18 +5,21 @@ import QuestForm from '../components/QuestForm.vue'
 import QuestPanel from '../components/QuestPanel.vue'
 import OffCanvas from '../components/OffCanvas.vue'
 import { useQuestsStore } from '../stores/quests'
+import { useProfileStore } from '../stores/profile'
 import { apiErrorMessage } from '../lib/apiClient'
 import Modal from '@/components/Modal.vue'
 
 const questsStore = useQuestsStore()
+const profileStore = useProfileStore()
 const showOffCanvas = ref(false)
 const showHomeMenu = ref(false)
+const showHomeConfirm = ref(false)
 const showMyQuestsMenu = ref(false)
 const showSettingsMenu = ref(false)
 const selectedQuest = ref(null)
 const pendingPin = ref(null) // { lat, lng } while the creation form is open
 const crudError = ref(null)
-const mapStatus = ref({ locationError: null, loadError: null, questsLoaded: false })
+const mapStatus = ref({ locationError: null, loadError: null, questsLoaded: false, position: null })
 
 function onMapStatus(status) {
   mapStatus.value = status
@@ -62,12 +65,27 @@ async function deleteSelectedQuest(id) {
     crudError.value = apiErrorMessage(e, 'Could not delete that quest.')
   }
 }
+
+function onHomeRequested() {
+  showHomeConfirm.value = true
+}
+
+async function confirmSetHome() {
+  crudError.value = null
+  try {
+    await profileStore.setHomeLocation(mapStatus.value.position)
+    showHomeConfirm.value = false
+  } catch (e) {
+    crudError.value = apiErrorMessage(e, 'Could not set that as your home base.')
+  }
+}
 </script>
 
 <template>
   <div class="sfm-canvas-button h-10 w-10 rounded-full bg-blue-500" @click="showOffCanvas = true"></div>
 
-  <QuestMap @pin-requested="onPinRequested" @quest-selected="onQuestSelected" @status="onMapStatus" />
+  <QuestMap @pin-requested="onPinRequested" @quest-selected="onQuestSelected" @status="onMapStatus"
+    @home-requested="onHomeRequested" />
 
   <div class="sfm-hud-top">
     <p v-if="mapStatus.locationError" class="sfm-location-banner">
@@ -95,6 +113,13 @@ async function deleteSelectedQuest(id) {
     <button type="button" @click="showSettingsMenu = true">Settings</button>
   </OffCanvas>
 
+  <Modal v-model="showHomeConfirm" title="Set Home Base?">
+    <p>Set your current location as your home base?</p>
+    <div class="sfm-home-confirm__actions">
+      <button type="button" data-test="confirm-home-yes" @click="confirmSetHome">Yes</button>
+      <button type="button" data-test="confirm-home-no" @click="showHomeConfirm = false">No</button>
+    </div>
+  </Modal>
   <Modal v-model="showHomeMenu">
     <div class="sfm-home-menu">
       <header>
