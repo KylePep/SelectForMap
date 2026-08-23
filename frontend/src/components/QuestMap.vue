@@ -8,7 +8,7 @@ import QuestMarker from './QuestMarker.vue'
 import { useGeolocation } from '../composables/useGeolocation'
 import { useQuestsStore } from '../stores/quests'
 import { useProfileStore } from '../stores/profile'
-import { boundsChangedSignificantly } from '../utils/bounds'
+import { boundsChangedSignificantly } from '../utils/bounds.js'
 import { apiErrorMessage } from '../lib/apiClient'
 
 const emit = defineEmits(['pin-requested', 'quest-selected', 'status', 'home-requested'])
@@ -136,13 +136,15 @@ function onHomeRequested() {
       @select="onQuestSelected" />
   </template>
 
-  <button v-if="showExploreButton" class="sfm-explore-button" @click="exploreThisArea">
-    Explore this area
-  </button>
+  <template class="sfm-hud-buttons">
+    <button v-if="profileStore.hasHomeBase" class="sfm-home-button" data-test="home-button" @click="centerOnHomeBase">
+      <img src="/sprites/home-marker.svg" alt="home button">
+    </button>
 
-  <button v-if="profileStore.hasHomeBase" class="sfm-home-button" data-test="home-button" @click="centerOnHomeBase">
-    Home
-  </button>
+    <button v-if="showExploreButton" class="sfm-explore-button" @click="exploreThisArea">
+      Explore this area
+    </button>
+  </template>
 
   <div v-if="mapError" class="sfm-map-error" data-test="map-error">
     <h2>Map unavailable</h2>

@@ -16,7 +16,7 @@ function render() {
   el.className = 'sfm-home-marker'
   el.style.width = '32px'
   el.style.height = '32px'
-  el.style.backgroundImage = 'url(/sprites/home-marker.png)'
+  el.style.backgroundImage = 'url(/sprites/home-marker.svg)'
   el.style.backgroundSize = 'contain'
   el.style.backgroundRepeat = 'no-repeat'
   el.style.backgroundPosition = 'center'

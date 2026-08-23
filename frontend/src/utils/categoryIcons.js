@@ -1,11 +1,11 @@
 // frontend/src/utils/categoryIcons.js
 const ICONS = {
-  food: '/sprites/quest-food.png',
-  movie: '/sprites/quest-movie.png',
-  outdoors: '/sprites/quest-outdoors.png',
-  nightlife: '/sprites/quest-nightlife.png',
-  shopping: '/sprites/quest-shopping.png',
-  other: '/sprites/quest-other.png',
+  food: '/sprites/quest-food.svg',
+  movie: '/sprites/quest-movie.svg',
+  outdoors: '/sprites/quest-outdoors.svg',
+  nightlife: '/sprites/quest-nightlife.svg',
+  shopping: '/sprites/quest-shopping.svg',
+  other: '/sprites/quest-other.svg',
 }
 
 // Bold, saturated fallback colors (spec §4) so markers stay visible and clickable

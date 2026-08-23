@@ -129,7 +129,10 @@ async function setHomeFromMenu() {
 </script>
 
 <template>
-  <div class="sfm-canvas-button h-10 w-10 rounded-full bg-blue-500" @click="showOffCanvas = true"></div>
+  <div class="sfm-canvas-button h-10 w-10 rounded-full bg-blue-500 flex items-center justify-content-center"
+    @click="showOffCanvas = true">
+    <img src="/sprites/menu.svg" alt="menu button" class="h-6 w-6 m-auto">
+  </div>
 
   <QuestMap @pin-requested="onPinRequested" @quest-selected="onQuestSelected" @status="onMapStatus"
     @home-requested="onHomeRequested" />
