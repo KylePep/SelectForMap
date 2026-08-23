@@ -7,6 +7,10 @@ import QuestMarker from '../../components/QuestMarker.vue'
 import QuestForm from '../../components/QuestForm.vue'
 import { apiClient } from '../../lib/apiClient'
 
+// MapView composes QuestMap (the real map surface) with the CRUD panels, so these
+// tests still drive a real maplibre-gl map to reach that composition — the map's
+// own internal behavior (loading, marker rendering, fallback panel, ...) is
+// covered in isolation by QuestMap.spec.js.
 vi.mock('maplibre-gl', () => {
   const state = { instances: [], markers: [] }
 
@@ -85,29 +89,12 @@ describe('MapView', () => {
     vi.clearAllMocks()
   })
 
-  it('loads quests for the current viewport once the map is ready', async () => {
-    const wrapper = await mountLoadedMap()
-
-    expect(apiClient.get).toHaveBeenCalledWith('/quests', {
-      params: { min_lat: 40, max_lat: 41, min_lng: -75, max_lng: -74 },
-    })
-    expect(wrapper.findAllComponents(QuestMarker)).toHaveLength(1)
-    expect(wrapper.find('[data-test="empty-state"]').exists()).toBe(false)
-  })
-
   it('shows the empty state when the viewport has no quests', async () => {
     const wrapper = await mountLoadedMap([])
 
     expect(wrapper.find('[data-test="empty-state"]').text()).toBe(
       'No quests here yet — drop a pin to add one.',
     )
-  })
-
-  it('does not show the empty state before quests have loaded', () => {
-    apiClient.get.mockResolvedValue({ data: [] })
-    const wrapper = mount(MapView)
-
-    expect(wrapper.find('[data-test="empty-state"]').exists()).toBe(false)
   })
 
   it('saves an edited quest through the store and shows the updated values', async () => {
@@ -183,36 +170,25 @@ describe('MapView', () => {
     expect(wrapper.findComponent(QuestForm).exists()).toBe(true)
   })
 
-  it('shows a fallback panel when the map fails to load', async () => {
-    apiClient.get.mockResolvedValue({ data: [] })
+  it('keeps a create-quest error and a stale quest-load error from rendering on top of each other', async () => {
+    apiClient.get.mockRejectedValue(new Error('Network Error'))
     const wrapper = mount(MapView)
     await flushPromises()
+    state.instances[0].emit('load')
+    await flushPromises()
+    expect(wrapper.find('[data-test="api-error"]').text()).toContain('Could not reach the server')
 
-    state.instances[0].emit('error', { error: { message: 'Unauthorized' } })
+    apiClient.post.mockRejectedValue({ response: { status: 500, data: {} } })
+    state.instances[0].emit('click', { lngLat: { lat: 41, lng: -73 } })
+    await flushPromises()
+    await wrapper.find('[data-test="title"]').setValue('New quest')
+    await wrapper.find('[data-test="starts_at"]').setValue('2026-09-01T18:00')
+    await wrapper.find('form').trigger('submit.prevent')
     await flushPromises()
 
-    expect(wrapper.find('[data-test="map-error"]').text()).toContain('Unable to load the map')
-  })
-
-  it('still surfaces the geolocation fallback message when the map fails', async () => {
-    apiClient.get.mockResolvedValue({ data: [] })
-    const wrapper = mount(MapView)
-    await flushPromises()
-
-    state.instances[0].emit('error', { error: { message: 'Unauthorized' } })
-    await flushPromises()
-
-    // jsdom has no navigator.geolocation, so useGeolocation takes its fallback path.
-    expect(wrapper.find('.sfm-location-banner').exists()).toBe(true)
-    expect(wrapper.find('[data-test="map-error"]').text()).toContain('Geolocation is unavailable')
-  })
-
-  it('ignores map errors that arrive after the map has already loaded', async () => {
-    const wrapper = await mountLoadedMap()
-
-    state.instances[0].emit('error', { error: { message: 'a tile failed' } })
-    await flushPromises()
-
-    expect(wrapper.find('[data-test="map-error"]').exists()).toBe(false)
+    // Only one error banner exists in the DOM at a time; the CRUD error (a direct
+    // result of the user's last action) takes priority over the stale load error.
+    expect(wrapper.findAll('[data-test="api-error"]')).toHaveLength(1)
+    expect(wrapper.find('[data-test="api-error"]').text()).toBe('Could not create that quest.')
   })
 })
