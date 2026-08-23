@@ -14,6 +14,7 @@ class QuestFactory extends Factory
             'title' => fake()->sentence(3),
             'description' => fake()->paragraph(),
             'category' => fake()->randomElement(['food', 'movie', 'outdoors', 'nightlife', 'shopping', 'other']),
+            'type' => 'quest',
             'lat' => fake()->latitude(),
             'lng' => fake()->longitude(),
             'starts_at' => fake()->dateTimeBetween('now', '+2 weeks'),
