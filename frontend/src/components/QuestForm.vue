@@ -7,6 +7,9 @@ const props = defineProps({
   // because an existing quest already carries its own lat/lng.
   lat: { type: Number, default: null },
   lng: { type: Number, default: null },
+  // Pin type for a brand new quest. Ignored when `quest` is given — an existing
+  // quest's own type is fixed and isn't editable through this form.
+  type: { type: String, default: 'quest' },
   // When present the form acts as an edit form, pre-filled from this quest.
   quest: { type: Object, default: null },
 })
@@ -21,6 +24,8 @@ const isEdit = computed(() => !!props.quest)
 const submitLabel = computed(() => (isEdit.value ? 'Save quest' : 'Create quest'))
 const latValue = computed(() => (props.quest ? props.quest.lat : props.lat))
 const lngValue = computed(() => (props.quest ? props.quest.lng : props.lng))
+const effectiveType = computed(() => props.quest?.type ?? props.type)
+const showStartsAt = computed(() => effectiveType.value === 'quest')
 
 /**
  * The API returns `starts_at` as an ISO-8601 string ("2026-09-01T18:00:00+00:00")
@@ -51,9 +56,10 @@ function submit() {
     title: title.value,
     description: description.value,
     category: category.value,
+    type: effectiveType.value,
     lat: latValue.value,
     lng: lngValue.value,
-    starts_at: startsAt.value,
+    starts_at: showStartsAt.value ? startsAt.value : null,
   })
 }
 </script>
@@ -70,7 +76,7 @@ function submit() {
       <option value="shopping">Shopping</option>
       <option value="other">Other</option>
     </select>
-    <input data-test="starts_at" v-model="startsAt" type="datetime-local" required />
+    <input v-if="showStartsAt" data-test="starts_at" v-model="startsAt" type="datetime-local" required />
     <button data-test="submit" type="submit">{{ submitLabel }}</button>
     <button data-test="cancel" type="button" @click="emit('cancel')">Cancel</button>
   </form>
@@ -78,17 +84,8 @@ function submit() {
 
 <style scoped>
 .sfm-quest-form {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 1rem;
-  border-top: 2px solid var(--sfm-panel-border);
-  background: var(--sfm-panel-bg);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2);
 }
 </style>

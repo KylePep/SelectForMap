@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import QuestMap from '../components/QuestMap.vue'
 import QuestForm from '../components/QuestForm.vue'
 import QuestPanel from '../components/QuestPanel.vue'
+import PinTypePicker from '../components/PinTypePicker.vue'
 import OffCanvas from '../components/OffCanvas.vue'
 import { useQuestsStore } from '../stores/quests'
 import { useProfileStore } from '../stores/profile'
@@ -17,9 +18,19 @@ const showHomeConfirm = ref(false)
 const showMyQuestsMenu = ref(false)
 const showSettingsMenu = ref(false)
 const selectedQuest = ref(null)
-const pendingPin = ref(null) // { lat, lng } while the creation form is open
+const pendingPin = ref(null) // { lat, lng } while the type-picker bar is open
+const showQuestModal = ref(false)
+const questModalQuest = ref(null) // set when editing an existing pin; null when creating
+const questModalType = ref('quest') // type chosen from the picker, used only when creating
 const crudError = ref(null)
 const mapStatus = ref({ locationError: null, loadError: null, questsLoaded: false, position: null })
+
+const questTypeLabels = { quest: 'Quest', recurring_quest: 'Recurring Quest', memory: 'Memory' }
+const questModalTitle = computed(() => {
+  const type = questModalQuest.value?.type ?? questModalType.value
+  const label = questTypeLabels[type]
+  return questModalQuest.value ? `Edit ${label}` : `New ${label}`
+})
 
 function onMapStatus(status) {
   mapStatus.value = status
@@ -36,20 +47,46 @@ function onQuestSelected(quest) {
   selectedQuest.value = quest
 }
 
+function onPinTypeChosen(type) {
+  questModalQuest.value = null
+  questModalType.value = type
+  showQuestModal.value = true
+}
+
+function onPinTypeCancelled() {
+  pendingPin.value = null
+}
+
+function onEditRequested(quest) {
+  questModalQuest.value = quest
+  showQuestModal.value = true
+}
+
+function closeQuestModal() {
+  showQuestModal.value = false
+  pendingPin.value = null
+  questModalQuest.value = null
+}
+
 async function submitQuest(payload) {
   crudError.value = null
+  const editing = questModalQuest.value
   try {
-    await questsStore.createQuest(payload)
-    pendingPin.value = null
+    if (editing) {
+      selectedQuest.value = await questsStore.updateQuest(editing.id, payload)
+    } else {
+      await questsStore.createQuest(payload)
+    }
+    closeQuestModal()
   } catch (e) {
-    crudError.value = apiErrorMessage(e, 'Could not create that quest.')
+    crudError.value = apiErrorMessage(e, editing ? 'Could not save that quest.' : 'Could not create that quest.')
   }
 }
 
 async function saveQuest(id, payload) {
   crudError.value = null
   try {
-    // Swapping in the freshly returned quest also closes QuestPanel's edit form.
+    // Swapping in the freshly returned quest also closes QuestPanel's complete-choices view.
     selectedQuest.value = await questsStore.updateQuest(id, payload)
   } catch (e) {
     crudError.value = apiErrorMessage(e, 'Could not save that quest.')
@@ -112,10 +149,15 @@ async function setHomeFromMenu() {
     </p>
   </div>
 
-  <QuestForm v-if="pendingPin" :lat="pendingPin.lat" :lng="pendingPin.lng" @submit="submitQuest"
-    @cancel="pendingPin = null" />
+  <PinTypePicker v-if="pendingPin && !showQuestModal" @select="onPinTypeChosen" @cancel="onPinTypeCancelled" />
+
+  <Modal :model-value="showQuestModal" :title="questModalTitle" @update:model-value="closeQuestModal">
+    <QuestForm :type="questModalType" :lat="pendingPin?.lat" :lng="pendingPin?.lng" :quest="questModalQuest"
+      @submit="submitQuest" @cancel="closeQuestModal" />
+  </Modal>
+
   <QuestPanel v-if="selectedQuest" :quest="selectedQuest" @close="selectedQuest = null" @delete="deleteSelectedQuest"
-    @save="saveQuest" />
+    @save="saveQuest" @edit="onEditRequested" />
 
   <OffCanvas v-model="showOffCanvas" title="Menu" class="sfm-off-canvas">
     <button type="button" data-test="home-base-menu-button" @click="showHomeMenu = true">Home Base</button>

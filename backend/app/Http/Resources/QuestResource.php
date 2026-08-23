@@ -14,9 +14,11 @@ class QuestResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'category' => $this->category,
+            'type' => $this->type,
             'lat' => $this->lat,
             'lng' => $this->lng,
-            'starts_at' => $this->starts_at->toIso8601String(),
+            'starts_at' => $this->starts_at?->toIso8601String(),
+            'completed_at' => $this->completed_at?->toIso8601String(),
         ];
     }
 }
