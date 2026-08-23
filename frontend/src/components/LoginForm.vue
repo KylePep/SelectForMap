@@ -32,13 +32,6 @@ function submit() {
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
-  max-width: 22rem;
-  padding: 1.5rem;
-  border: 2px solid var(--sfm-panel-border);
-  border-radius: 10px;
-  background: var(--sfm-panel-bg);
-  color: var(--sfm-panel-text);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .sfm-auth-form__header {

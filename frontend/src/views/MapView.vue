@@ -6,9 +6,13 @@ import QuestPanel from '../components/QuestPanel.vue'
 import OffCanvas from '../components/OffCanvas.vue'
 import { useQuestsStore } from '../stores/quests'
 import { apiErrorMessage } from '../lib/apiClient'
+import Modal from '@/components/Modal.vue'
 
 const questsStore = useQuestsStore()
 const showOffCanvas = ref(false)
+const showHomeMenu = ref(false)
+const showMyQuestsMenu = ref(false)
+const showSettingsMenu = ref(false)
 const selectedQuest = ref(null)
 const pendingPin = ref(null) // { lat, lng } while the creation form is open
 const crudError = ref(null)
@@ -85,7 +89,31 @@ async function deleteSelectedQuest(id) {
   <QuestPanel v-if="selectedQuest" :quest="selectedQuest" @close="selectedQuest = null" @delete="deleteSelectedQuest"
     @save="saveQuest" />
 
-  <OffCanvas v-model="showOffCanvas" title="Menu">
-    <button>My Quests</button>
+  <OffCanvas v-model="showOffCanvas" title="Menu" class="sfm-off-canvas">
+    <button type="button" @click="showHomeMenu = true">Home Base</button>
+    <button type="button" @click="showMyQuestsMenu = true">My Quests</button>
+    <button type="button" @click="showSettingsMenu = true">Settings</button>
   </OffCanvas>
+
+  <Modal v-model="showHomeMenu">
+    <div class="sfm-home-menu">
+      <header>
+        <h2>HOME BASE MENU</h2>
+      </header>
+    </div>
+  </Modal>
+  <Modal v-model="showMyQuestsMenu">
+    <div class="sfm-my-quests-menu">
+      <header>
+        <h2>MY QUESTS MENU</h2>
+      </header>
+    </div>
+  </Modal>
+  <Modal v-model="showSettingsMenu">
+    <div class="sfm-settings-menu">
+      <header>
+        <h2>SETTINGS MENU</h2>
+      </header>
+    </div>
+  </Modal>
 </template>

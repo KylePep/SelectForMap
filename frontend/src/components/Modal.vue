@@ -34,20 +34,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
-  <div
-    v-if="modelValue"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-    data-test="modal-backdrop"
-    @click.self="close"
-  >
+  <div v-if="modelValue" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    data-test="modal-backdrop" @click.self="close">
     <div class="sfm-modal-content">
-      <button
-        type="button"
-        class="sfm-modal-content__close"
-        data-test="modal-close"
-        aria-label="Close"
-        @click="close"
-      >
+      <button type="button" class="sfm-modal-content__close" data-test="modal-close" aria-label="Close" @click="close">
         &times;
       </button>
       <h2 v-if="title" class="sfm-modal-content__title">{{ title }}</h2>
@@ -59,9 +49,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 <style scoped>
 .sfm-modal-content {
   position: relative;
-  max-width: 100%;
-  max-height: 100%;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 22rem;
+  padding: 1.5rem;
+  border: 2px solid var(--sfm-panel-border);
+  border-radius: 10px;
+  background: var(--sfm-panel-bg);
+  color: var(--sfm-panel-text);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .sfm-modal-content__title {

@@ -29,13 +29,8 @@ function submit() {
     <input data-test="name" v-model="name" placeholder="Name" required />
     <input data-test="email" v-model="email" type="email" placeholder="Email" required />
     <input data-test="password" v-model="password" type="password" placeholder="Password" required />
-    <input
-      data-test="password_confirmation"
-      v-model="passwordConfirmation"
-      type="password"
-      placeholder="Confirm password"
-      required
-    />
+    <input data-test="password_confirmation" v-model="passwordConfirmation" type="password"
+      placeholder="Confirm password" required />
     <button data-test="submit" type="submit">Sign up</button>
     <p v-if="error" class="sfm-auth-form__error" data-test="error">{{ error }}</p>
   </form>
@@ -47,13 +42,6 @@ function submit() {
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
-  max-width: 22rem;
-  padding: 1.5rem;
-  border: 2px solid var(--sfm-panel-border);
-  border-radius: 10px;
-  background: var(--sfm-panel-bg);
-  color: var(--sfm-panel-text);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .sfm-auth-form__header {

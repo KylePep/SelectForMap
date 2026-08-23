@@ -35,24 +35,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 <template>
   <Transition name="sfm-offcanvas">
-    <div
-      v-if="modelValue"
-      class="sfm-offcanvas-backdrop"
-      data-test="offcanvas-backdrop"
-      @click.self="close"
-    >
+    <div v-if="modelValue" class="sfm-offcanvas-backdrop" data-test="offcanvas-backdrop" @click.self="close">
       <div class="sfm-offcanvas-panel">
-        <button
-          type="button"
-          class="sfm-offcanvas-panel__close"
-          data-test="offcanvas-close"
-          aria-label="Close"
-          @click="close"
-        >
+        <button type="button" class="sfm-offcanvas-panel__close" data-test="offcanvas-close" aria-label="Close"
+          @click="close">
           &times;
         </button>
         <h2 v-if="title" class="sfm-offcanvas-panel__title">{{ title }}</h2>
-        <slot />
+        <div class="sfm-offcanvas-panel__content">
+          <slot />
+        </div>
+
       </div>
     </div>
   </Transition>
@@ -95,6 +88,12 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 .sfm-offcanvas-panel__title {
   margin-bottom: 0.75rem;
   padding-right: 1.75rem;
+}
+
+.sfm-offcanvas-panel__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .sfm-offcanvas-panel__close {
