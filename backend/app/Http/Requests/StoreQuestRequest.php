@@ -11,15 +11,21 @@ class StoreQuestRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $this->merge(['type' => $this->input('type', 'quest')]);
+    }
+
     public function rules(): array
     {
         return [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'category' => ['required', 'in:food,movie,outdoors,nightlife,shopping,other'],
+            'type' => ['required', 'in:quest,recurring_quest,memory'],
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
-            'starts_at' => ['required', 'date'],
+            'starts_at' => ['nullable', 'required_if:type,quest', 'date'],
         ];
     }
 }

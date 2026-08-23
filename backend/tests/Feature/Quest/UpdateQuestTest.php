@@ -47,3 +47,45 @@ test('updating a quest requires authentication', function () {
 
     $response->assertUnauthorized();
 });
+
+test('completing a quest can convert it into a recurring quest', function () {
+    $user = User::factory()->create();
+    $quest = Quest::factory()->create(['user_id' => $user->id, 'type' => 'quest']);
+    Sanctum::actingAs($user);
+
+    $response = $this->putJson("/api/quests/{$quest->id}", [
+        'title' => $quest->title,
+        'description' => $quest->description,
+        'category' => $quest->category,
+        'lat' => $quest->lat,
+        'lng' => $quest->lng,
+        'type' => 'recurring_quest',
+        'starts_at' => null,
+        'completed_at' => '2026-08-22 10:00:00',
+    ]);
+
+    $response->assertOk()
+        ->assertJsonPath('type', 'recurring_quest')
+        ->assertJsonPath('starts_at', null);
+    expect($quest->fresh()->completed_at)->not->toBeNull();
+});
+
+test('completing a quest can convert it into a memory', function () {
+    $user = User::factory()->create();
+    $quest = Quest::factory()->create(['user_id' => $user->id, 'type' => 'quest']);
+    Sanctum::actingAs($user);
+
+    $response = $this->putJson("/api/quests/{$quest->id}", [
+        'title' => $quest->title,
+        'description' => $quest->description,
+        'category' => $quest->category,
+        'lat' => $quest->lat,
+        'lng' => $quest->lng,
+        'type' => 'memory',
+        'starts_at' => null,
+        'completed_at' => '2026-08-22 10:00:00',
+    ]);
+
+    $response->assertOk()->assertJsonPath('type', 'memory');
+    expect($quest->fresh()->completed_at)->not->toBeNull();
+});
