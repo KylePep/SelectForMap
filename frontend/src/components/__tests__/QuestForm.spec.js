@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import QuestForm from '../QuestForm.vue'
 
 describe('QuestForm', () => {
-  it('emits submit with the entered values plus the given coordinates', async () => {
+  it('emits submit with the entered values, type "quest", and the given coordinates', async () => {
     const wrapper = mount(QuestForm, { props: { lat: 40.7128, lng: -74.006 } })
 
     await wrapper.find('[data-test="title"]').setValue('Movie night')
@@ -16,6 +16,7 @@ describe('QuestForm', () => {
       title: 'Movie night',
       description: 'New sci-fi release',
       category: 'movie',
+      type: 'quest',
       lat: 40.7128,
       lng: -74.006,
       starts_at: '2026-09-01T18:00',
@@ -38,12 +39,67 @@ describe('QuestForm', () => {
     expect(wrapper.find('[data-test="submit"]').text()).toBe('Create quest')
   })
 
+  describe('type awareness', () => {
+    it('shows starts_at for the default "quest" type', () => {
+      const wrapper = mount(QuestForm, { props: { lat: 1, lng: 2 } })
+
+      expect(wrapper.find('[data-test="starts_at"]').exists()).toBe(true)
+    })
+
+    it('hides starts_at and submits a null starts_at for a recurring_quest', async () => {
+      const wrapper = mount(QuestForm, { props: { lat: 1, lng: 2, type: 'recurring_quest' } })
+
+      expect(wrapper.find('[data-test="starts_at"]').exists()).toBe(false)
+
+      await wrapper.find('[data-test="title"]').setValue('Walk the dog')
+      await wrapper.find('[data-test="category"]').setValue('outdoors')
+      await wrapper.find('form').trigger('submit.prevent')
+
+      expect(wrapper.emitted('submit')[0][0]).toEqual({
+        title: 'Walk the dog',
+        description: '',
+        category: 'outdoors',
+        type: 'recurring_quest',
+        lat: 1,
+        lng: 2,
+        starts_at: null,
+      })
+    })
+
+    it('hides starts_at for a memory', () => {
+      const wrapper = mount(QuestForm, { props: { lat: 1, lng: 2, type: 'memory' } })
+
+      expect(wrapper.find('[data-test="starts_at"]').exists()).toBe(false)
+    })
+
+    it("uses the quest's own type when editing, ignoring the type prop", () => {
+      const wrapper = mount(QuestForm, {
+        props: {
+          type: 'quest',
+          quest: {
+            id: 9,
+            title: 'Dog park',
+            description: '',
+            category: 'outdoors',
+            type: 'recurring_quest',
+            lat: 1,
+            lng: 2,
+            starts_at: null,
+          },
+        },
+      })
+
+      expect(wrapper.find('[data-test="starts_at"]').exists()).toBe(false)
+    })
+  })
+
   describe('when reused as an edit form', () => {
     const quest = {
       id: 7,
       title: 'Movie night',
       description: 'Sci-fi',
       category: 'movie',
+      type: 'quest',
       lat: 40.7128,
       lng: -74.006,
       starts_at: '2026-09-01T18:00:00+00:00',
@@ -60,7 +116,7 @@ describe('QuestForm', () => {
       expect(wrapper.find('[data-test="submit"]').text()).toBe('Save quest')
     })
 
-    it('emits submit with the edited values and the quest own coordinates', async () => {
+    it("emits submit with the edited values, the quest's type, and its own coordinates", async () => {
       const wrapper = mount(QuestForm, { props: { quest } })
 
       await wrapper.find('[data-test="title"]').setValue('Movie night (rescheduled)')
@@ -71,6 +127,7 @@ describe('QuestForm', () => {
         title: 'Movie night (rescheduled)',
         description: 'Sci-fi',
         category: 'movie',
+        type: 'quest',
         lat: 40.7128,
         lng: -74.006,
         starts_at: '2026-09-02T20:30',
