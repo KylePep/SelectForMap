@@ -7,12 +7,30 @@ const props = defineProps({
   map: { type: Object, required: true },
   lat: { type: Number, required: true },
   lng: { type: Number, required: true },
+  clickable: { type: Boolean, default: false },
 })
+const emit = defineEmits(['home-requested'])
 
 let marker = null
+let markerEl = null
+
+function onClick(event) {
+  event.stopPropagation()
+  emit('home-requested')
+}
+
+// Applied both at creation and whenever the `clickable` prop changes later, since
+// this marker stays mounted across a home base being set mid-session.
+function applyClickable(clickable) {
+  if (!markerEl) return
+  markerEl.style.cursor = clickable ? 'pointer' : ''
+  markerEl.removeEventListener('click', onClick)
+  if (clickable) markerEl.addEventListener('click', onClick)
+}
 
 function render() {
   const el = document.createElement('div')
+  markerEl = el
   el.className = 'sfm-avatar-marker'
   el.style.width = '32px'
   el.style.height = '32px'
@@ -26,6 +44,7 @@ function render() {
   el.style.borderRadius = '50%'
   el.style.border = '3px solid #ffffff'
   el.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.35)'
+  applyClickable(props.clickable)
 
   marker = new maplibregl.Marker({ element: el })
     .setLngLat([props.lng, props.lat])
@@ -38,6 +57,8 @@ onBeforeUnmount(() => marker?.remove())
 watch(() => [props.lat, props.lng], () => {
   marker?.setLngLat([props.lng, props.lat])
 })
+
+watch(() => props.clickable, (clickable) => applyClickable(clickable))
 </script>
 
 <template></template>
