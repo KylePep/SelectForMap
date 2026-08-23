@@ -11,9 +11,8 @@ let reportedError = false
 
 const LOAD_FAILURE_MESSAGE = 'Unable to load the map. Please check your connection or try again later.'
 
-// OpenFreeMap's hosted style — free, no API key/account required. "positron" is a
-// light, muted basemap matching the spec's light-pastel-base/bold-marker direction.
-const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/positron'
+// OpenFreeMap's hosted style — free, no API key/account required. "bright" is a light-colored style that works well with the app's dark HUD elements.
+const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/bright'
 
 // The map library emits a stream of `error` events (one per failed tile request,
 // for example); the view only ever needs to be told once.
