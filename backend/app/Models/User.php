@@ -33,6 +33,11 @@ class User extends Authenticatable
 
     public function quests()
     {
-        return $this->hasMany(\App\Models\Quest::class);
+        return $this->hasMany(Quest::class);
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
     }
 }
