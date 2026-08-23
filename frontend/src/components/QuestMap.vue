@@ -3,13 +3,15 @@
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import MapCanvas from './MapCanvas.vue'
 import AvatarMarker from './AvatarMarker.vue'
+import HomeMarker from './HomeMarker.vue'
 import QuestMarker from './QuestMarker.vue'
 import { useGeolocation } from '../composables/useGeolocation'
 import { useQuestsStore } from '../stores/quests'
+import { useProfileStore } from '../stores/profile'
 import { boundsChangedSignificantly } from '../utils/bounds'
 import { apiErrorMessage } from '../lib/apiClient'
 
-const emit = defineEmits(['pin-requested', 'quest-selected', 'status'])
+const emit = defineEmits(['pin-requested', 'quest-selected', 'status', 'home-requested'])
 
 // shallowRef, not ref: a maplibre-gl Map holds a large internal object graph that
 // must not be wrapped in a deep reactive Proxy (breaks identity/WeakMap lookups
@@ -17,6 +19,7 @@ const emit = defineEmits(['pin-requested', 'quest-selected', 'status'])
 const map = shallowRef(null)
 const { position, error, requestLocation } = useGeolocation()
 const questsStore = useQuestsStore()
+const profileStore = useProfileStore()
 const showExploreButton = ref(false)
 const mapError = ref(null)
 const mapLoaded = ref(false)
@@ -31,6 +34,7 @@ const status = computed(() => ({
   locationError: error.value,
   loadError: apiError.value,
   questsLoaded: questsLoaded.value,
+  position: position.value,
 }))
 watch(status, (value) => emit('status', value), { immediate: true })
 
@@ -43,6 +47,19 @@ function centerOnPosition(toPosition) {
   if (!map.value || !toPosition) return
   const zoom = Math.max(map.value.getZoom(), 12)
   map.value.flyTo({ center: [toPosition.lng, toPosition.lat], zoom })
+}
+
+function centerOnHomeBase() {
+  centerOnPosition({ lat: profileStore.homeLat, lng: profileStore.homeLng })
+}
+
+// On a geolocation failure, a saved home base is a better starting view than the
+// hardcoded contiguous-US default useGeolocation falls back to.
+function initialCenter() {
+  if (error.value && profileStore.hasHomeBase) {
+    return { lat: profileStore.homeLat, lng: profileStore.homeLng }
+  }
+  return position.value
 }
 
 async function loadQuests() {
@@ -68,7 +85,8 @@ async function onMapReady(mapInstance) {
   map.value = mapInstance
   mapLoaded.value = true
   mapError.value = null
-  centerOnPosition(position.value)
+  await profileStore.fetchProfile()
+  centerOnPosition(initialCenter())
   await loadQuests()
 
   map.value.on('moveend', () => {
@@ -99,6 +117,10 @@ function onQuestSelected(quest) {
   emit('quest-selected', quest)
   centerOnPosition(quest)
 }
+
+function onHomeRequested() {
+  emit('home-requested')
+}
 </script>
 
 <template>
@@ -107,13 +129,19 @@ function onQuestSelected(quest) {
   <MapCanvas @map-ready="onMapReady" @map-click="onMapClick" @map-error="onMapError" />
 
   <template v-if="map">
-    <AvatarMarker v-if="position" :map="map" :lat="position.lat" :lng="position.lng" />
+    <AvatarMarker v-if="position" :map="map" :lat="position.lat" :lng="position.lng"
+      :clickable="!profileStore.hasHomeBase" @home-requested="onHomeRequested" />
+    <HomeMarker v-if="profileStore.hasHomeBase" :map="map" :lat="profileStore.homeLat" :lng="profileStore.homeLng" />
     <QuestMarker v-for="quest in questsStore.quests" :key="quest.id" :map="map" :quest="quest"
       @select="onQuestSelected" />
   </template>
 
   <button v-if="showExploreButton" class="sfm-explore-button" @click="exploreThisArea">
     Explore this area
+  </button>
+
+  <button v-if="profileStore.hasHomeBase" class="sfm-home-button" data-test="home-button" @click="centerOnHomeBase">
+    Home
   </button>
 
   <div v-if="mapError" class="sfm-map-error" data-test="map-error">
