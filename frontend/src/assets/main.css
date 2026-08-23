@@ -17,6 +17,17 @@ body,
   font-weight: normal;
 }
 
+button {
+  border: 1px solid black;
+  padding: 2px 4px;
+  background-color: white;
+  border-radius: 4px;
+}
+
+button:hover {
+  cursor: pointer;
+}
+
 a {
   color: var(--sfm-accent);
   text-decoration: none;
