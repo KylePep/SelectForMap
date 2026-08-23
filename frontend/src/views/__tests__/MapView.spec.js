@@ -69,6 +69,7 @@ const quest = {
   title: 'Movie night',
   description: 'Sci-fi',
   category: 'movie',
+  type: 'quest',
   lat: 40.7128,
   lng: -74.006,
   starts_at: '2026-09-01T18:00:00+00:00',
@@ -116,6 +117,7 @@ describe('MapView', () => {
       title: 'Movie night (rescheduled)',
       description: 'Sci-fi',
       category: 'movie',
+      type: 'quest',
       lat: 40.7128,
       lng: -74.006,
       starts_at: '2026-09-01T18:00',
@@ -163,6 +165,7 @@ describe('MapView', () => {
 
     state.instances[0].emit('click', { lngLat: { lat: 41, lng: -73 } })
     await flushPromises()
+    await wrapper.find('[data-test="type-quest"]').trigger('click')
 
     await wrapper.find('[data-test="title"]').setValue('New quest')
     await wrapper.find('[data-test="starts_at"]').setValue('2026-09-01T18:00')
@@ -171,6 +174,68 @@ describe('MapView', () => {
 
     expect(wrapper.find('[data-test="api-error"]').text()).toBe('Could not create that quest.')
     expect(wrapper.findComponent(QuestForm).exists()).toBe(true)
+  })
+
+  it('shows the pin type picker after a map click, and opens the modal for the chosen type', async () => {
+    const wrapper = await mountLoadedMap()
+
+    state.instances[0].emit('click', { lngLat: { lat: 41, lng: -73 } })
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="type-quest"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="type-recurring_quest"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="type-memory"]').exists()).toBe(true)
+
+    await wrapper.find('[data-test="type-memory"]').trigger('click')
+
+    expect(wrapper.find('[data-test="modal-backdrop"]').exists()).toBe(true)
+    expect(wrapper.find('[data-test="starts_at"]').exists()).toBe(false)
+  })
+
+  it('creates a recurring quest without a starts_at through the modal', async () => {
+    const wrapper = await mountLoadedMap()
+    apiClient.post.mockResolvedValue({
+      data: {
+        id: 9,
+        title: 'Walk the dog',
+        description: '',
+        category: 'outdoors',
+        type: 'recurring_quest',
+        lat: 41,
+        lng: -73,
+        starts_at: null,
+      },
+    })
+
+    state.instances[0].emit('click', { lngLat: { lat: 41, lng: -73 } })
+    await flushPromises()
+    await wrapper.find('[data-test="type-recurring_quest"]').trigger('click')
+    await wrapper.find('[data-test="title"]').setValue('Walk the dog')
+    await wrapper.find('[data-test="category"]').setValue('outdoors')
+    await wrapper.find('form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(apiClient.post).toHaveBeenCalledWith('/quests', {
+      title: 'Walk the dog',
+      description: '',
+      category: 'outdoors',
+      type: 'recurring_quest',
+      lat: 41,
+      lng: -73,
+      starts_at: null,
+    })
+    expect(wrapper.find('[data-test="modal-backdrop"]').exists()).toBe(false)
+  })
+
+  it('cancelling the type picker clears the pending pin without opening the modal', async () => {
+    const wrapper = await mountLoadedMap()
+
+    state.instances[0].emit('click', { lngLat: { lat: 41, lng: -73 } })
+    await flushPromises()
+    await wrapper.find('[data-test="cancel"]').trigger('click')
+
+    expect(wrapper.find('[data-test="type-quest"]').exists()).toBe(false)
+    expect(wrapper.find('[data-test="modal-backdrop"]').exists()).toBe(false)
   })
 
   it('keeps a create-quest error and a stale quest-load error from rendering on top of each other', async () => {
@@ -184,6 +249,7 @@ describe('MapView', () => {
     apiClient.post.mockRejectedValue({ response: { status: 500, data: {} } })
     state.instances[0].emit('click', { lngLat: { lat: 41, lng: -73 } })
     await flushPromises()
+    await wrapper.find('[data-test="type-quest"]').trigger('click')
     await wrapper.find('[data-test="title"]').setValue('New quest')
     await wrapper.find('[data-test="starts_at"]').setValue('2026-09-01T18:00')
     await wrapper.find('form').trigger('submit.prevent')
