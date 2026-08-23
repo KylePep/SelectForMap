@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import maplibregl from 'maplibre-gl'
 import MapView from '../MapView.vue'
+import QuestMap from '../../components/QuestMap.vue'
 import QuestMarker from '../../components/QuestMarker.vue'
 import QuestForm from '../../components/QuestForm.vue'
 import AvatarMarker from '../../components/AvatarMarker.vue'
@@ -239,5 +240,48 @@ describe('MapView', () => {
 
     expect(apiClient.patch).not.toHaveBeenCalled()
     expect(wrapper.find('[data-test="modal-backdrop"]').exists()).toBe(false)
+  })
+
+  it('sets home base from the Home Base off-canvas menu', async () => {
+    const wrapper = await mountLoadedMap()
+    apiClient.patch.mockResolvedValue({ data: { home_lat: 39.8283, home_lng: -98.5795 } })
+
+    await wrapper.find('.sfm-canvas-button').trigger('click')
+    await wrapper.find('[data-test="home-base-menu-button"]').trigger('click')
+    await wrapper.find('[data-test="set-home-from-menu"]').trigger('click')
+    await flushPromises()
+
+    expect(apiClient.patch).toHaveBeenCalledWith('/profile', { home_lat: 39.8283, home_lng: -98.5795 })
+  })
+
+  it('shows an inline error when setting home base from the menu fails', async () => {
+    const wrapper = await mountLoadedMap()
+    apiClient.patch.mockRejectedValue(new Error('Network Error'))
+
+    await wrapper.find('.sfm-canvas-button').trigger('click')
+    await wrapper.find('[data-test="home-base-menu-button"]').trigger('click')
+    await wrapper.find('[data-test="set-home-from-menu"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="api-error"]').text()).toContain('Could not reach the server')
+  })
+
+  it('disables the off-canvas "set home base" button until a position is available', async () => {
+    const wrapper = await mountLoadedMap()
+    // jsdom resolves useGeolocation's fallback within the same microtask flush as any
+    // `trigger()`, so a real "position not yet available" state can't be raced via
+    // timing — simulate it directly via the same status event QuestMap emits.
+    wrapper.findComponent(QuestMap).vm.$emit('status', {
+      locationError: null,
+      loadError: null,
+      questsLoaded: true,
+      position: null,
+    })
+    await flushPromises()
+
+    await wrapper.find('.sfm-canvas-button').trigger('click')
+    await wrapper.find('[data-test="home-base-menu-button"]').trigger('click')
+
+    expect(wrapper.find('[data-test="set-home-from-menu"]').attributes('disabled')).toBeDefined()
   })
 })

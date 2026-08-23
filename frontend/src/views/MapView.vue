@@ -79,6 +79,16 @@ async function confirmSetHome() {
     crudError.value = apiErrorMessage(e, 'Could not set that as your home base.')
   }
 }
+
+async function setHomeFromMenu() {
+  crudError.value = null
+  try {
+    await profileStore.setHomeLocation(mapStatus.value.position)
+    showHomeMenu.value = false
+  } catch (e) {
+    crudError.value = apiErrorMessage(e, 'Could not set that as your home base.')
+  }
+}
 </script>
 
 <template>
@@ -108,7 +118,7 @@ async function confirmSetHome() {
     @save="saveQuest" />
 
   <OffCanvas v-model="showOffCanvas" title="Menu" class="sfm-off-canvas">
-    <button type="button" @click="showHomeMenu = true">Home Base</button>
+    <button type="button" data-test="home-base-menu-button" @click="showHomeMenu = true">Home Base</button>
     <button type="button" @click="showMyQuestsMenu = true">My Quests</button>
     <button type="button" @click="showSettingsMenu = true">Settings</button>
   </OffCanvas>
@@ -125,6 +135,9 @@ async function confirmSetHome() {
       <header>
         <h2>HOME BASE MENU</h2>
       </header>
+      <button type="button" data-test="set-home-from-menu" :disabled="!mapStatus.position" @click="setHomeFromMenu">
+        Set current location as Home Base
+      </button>
     </div>
   </Modal>
   <Modal v-model="showMyQuestsMenu">
